@@ -1074,8 +1074,9 @@ void THCudaTensor_randn(THCudaTensor *r_, THLongStorage *size)
   THCudaTensor_normal(r_, 0, 1);
 }
 
-__global__ void copyIndexTensor(float *tensor, float *src, long* src_size, long src_nDim, 
-                               int dim, long *index, long idx_size, long tensor_size )
+__global__ void THCudaTensor_kernel_indexSelect(
+   float *tensor, float *src, long* src_size, long src_nDim, 
+   int dim, long *index, long idx_size, long tensor_size )
 {
   int idx = blockIdx.x * blockDim.x * blockDim.y + threadIdx.y * blockDim.x + threadIdx.x;
 
@@ -1159,10 +1160,12 @@ static void THCudaTensor_indexSelect(THCudaTensor *tensor, THCudaTensor *src, in
   THCudaCheck(cudaMalloc((void**)&d_src_size, src->nDimension * sizeof(long)));
   THCudaCheck(cudaMemcpy(d_src_size, src->size, src->nDimension * sizeof(long), cudaMemcpyHostToDevice));
 
-
-  copyIndexTensor<<<nblocks, nthreads>>>(THCudaTensor_data(tensor), THCudaTensor_data(src), 
-                                         d_src_size, src->nDimension, dim, 
-                                         d_index_data, idx_size, tensor_size);  
+  THCudaTensor_kernel_indexSelect<<<nblocks, nthreads>>>(
+    THCudaTensor_data(tensor), THCudaTensor_data(src), 
+    d_src_size, src->nDimension, dim, 
+    d_index_data, idx_size, tensor_size
+  );
+    
   THCudaCheck(cudaFree(d_index_data));
   THCudaCheck(cudaFree(d_src_size));
   THLongTensor_free(index);

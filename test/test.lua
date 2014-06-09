@@ -219,3 +219,5 @@ function cutorch.test()
    tester:add(test)
    tester:run()
 end
+
+cutorch.test()
