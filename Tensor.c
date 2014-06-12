@@ -92,9 +92,13 @@ static void THCudaTensor_indexCopy(THCudaTensor *tensor, int dim, THLongTensor *
   }
   THLongTensor_free(index);
 }
+<<<<<<< HEAD
 /*
  * Based on the implementation of the THTensor_(indexSelect) in torch7
  */
+=======
+
+>>>>>>> 6febd9f7aaa43a16d91ed36e78556787b4e00449
 
 #define real float
 #define Real Cuda
