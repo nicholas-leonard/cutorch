@@ -1351,3 +1351,26 @@ void THCudaTensor_indexSelect(THCudaTensor *res_, THCudaTensor *src, int dim, TH
   THCudaCheck(cudaFree(stride_));
   THCudaTensor_free(indices_);
 }
+
+void THCudaTensor_sort(THCudaTensor *rt_, THLongTensor *ri_, THCudaTensor *t, int dimension, int descendingOrder)
+{
+  THArgCheck(dimension >= 0 && dimension < THCudaTensor_nDimension(t), 2, "invalid dimension");
+
+  THCudaTensor_resizeAs(rt_, t);
+  THCudaTensor_copy(rt_, t);
+
+  {
+    THLongStorage *size = THCudaTensor_newSizeOf(t);
+    THLongTensor_resize(ri_, size, NULL);
+    THLongStorage_free(size);
+  }
+
+  if(descendingOrder)
+  {
+    
+  }
+  else
+  {
+  
+  }
+}
