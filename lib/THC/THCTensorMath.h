@@ -51,6 +51,8 @@ THC_API void THCudaTensor_floor(THCudaTensor *self);
 THC_API void THCudaTensor_abs(THCudaTensor *self);
 THC_API void THCudaTensor_sign(THCudaTensor *self, THCudaTensor *src);
 
+THC_API void THCudaTensor_sort(THCudaTensor *rt_, THLongTensor *ri_, THCudaTensor *t, int dimension, int descendingOrder);
+
 THC_API void THCudaTensor_ltValue(THCudaTensor *self_, THCudaTensor *src, float value);
 THC_API void THCudaTensor_gtValue(THCudaTensor *self_, THCudaTensor *src, float value);
 THC_API void THCudaTensor_leValue(THCudaTensor *self_, THCudaTensor *src, float value);
