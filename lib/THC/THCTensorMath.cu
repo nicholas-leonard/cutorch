@@ -1354,6 +1354,42 @@ void THCudaTensor_indexSelect(THCudaTensor *res_, THCudaTensor *src, int dim, TH
   THCudaTensor_free(indices_);
 }
 
+template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
+__global__ void THCudaTensor_sort_kernel(float *value, float *indice, int blockSize)
+{
+    // Specialize BlockLoad, BlockStore, and BlockRadixSort collective types
+    typedef cub::BlockLoad<float*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE > BlockLoadT;
+    typedef cub::BlockStore<float*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE > BlockStoreT;
+    // Specialize BlockRadixSort for a 1D block of 128 threads owning 4 integer keys and values each
+    typedef cub::BlockRadixSort<float, BLOCK_THREADS, ITEMS_PER_THREAD, long> BlockRadixSortT;
+  
+    // Allocate type-safe, repurposable shared memory for collectives
+    __shared__ union {
+        typename BlockLoadT::TempStorage       loadKey;
+        typename BlockLoadT::TempStorage       loadValue;
+        typename BlockStoreT::TempStorage      storeKey; 
+        typename BlockStoreT::TempStorage      storeValue; 
+        typename BlockRadixSortT::TempStorage  sort;
+    } temp_storage; 
+    
+    // Obtain a segment of consecutive items that are blocked across threads
+    int thread_keys[ITEMS_PER_THREAD];
+    int thread_values[ITEMS_PER_THREAD];
+    //int block_offset = blockIdx.x * (BLOCK_THREADS * ITEMS_PER_THREAD); 
+    int block_offset = blockIdx.x * blockSize;  
+    BlockLoadT(temp_storage.loadKey).Load(value + blockSize, thread_keys);
+    BlockLoadT(temp_storage.loadValue).Load(indices + blockSize, thread_values);
+    
+    __syncthreads();    // Barrier for smem reuse
+        // Collectively sort the keys and values among block threads
+    BlockRadixSortT(temp_storage).Sort(thread_keys, thread_values);
+    __syncthreads();    // Barrier for smem reuse
+    // Store the sorted segment 
+    BlockStoreT(temp_storage.storeKey).Store(value + block_offset, thread_keys);
+    BlockStoreT(temp_storage.storeValue).Store(indice + block_offset, thread_values);
+}
+
+
 void THCudaTensor_sort(THCudaTensor *rt_, THLongTensor *ri_, THCudaTensor *t, int dimension, int descendingOrder)
 {
   THArgCheck(dimension >= 0 && dimension < THCudaTensor_nDimension(t), 2, "invalid dimension");
@@ -1366,13 +1402,18 @@ void THCudaTensor_sort(THCudaTensor *rt_, THLongTensor *ri_, THCudaTensor *t, in
     THLongTensor_resize(ri_, size, NULL);
     THLongStorage_free(size);
   }
+  
+  THCudaTensor *t_ = THCudaTensor_newTranspose(t, dimension-1, THCudaTensor_nDimension(t)-1)
+  THCudaTensor *rtc = THCudaTensor_newContiguous(t_);
+  
+  THCudaTensor *
 
   if(descendingOrder)
   {
-    
+    // mul(-1), sort, :mul(-1)
   }
   else
   {
-  
+    THCudaTensor_sort_kernel(rt
   }
 }
