@@ -6,6 +6,8 @@
 #include <thrust/functional.h>
 #include <thrust/reduce.h>
 #include <thrust/inner_product.h>
+#include "../cub/block/block_radix_sort.cuh"
+#include <iostream> // without this, cub fails (don't ask)
 
 #define NB_THREADS_PER_BLOCK 256
 
